@@ -53,15 +53,6 @@ namespace YARG.Serialization.Parser {
 			// if this is a RB song...
 			if (songEntry is ExtractedConSongEntry oof) {
 
-				var snapGrid = new SteppedGrid(TimeSpanUtilities.Parse("16")); // snap notes to 16 ticks
-
-				midi.QuantizeObjects(ObjectType.Note, snapGrid,
-					new QuantizingSettings {
-						Filter = null,
-						QuantizingLevel = 1.0,
-					}
-				);
-
 				//...and it contains an update, merge the base and update midi
 
 				if (oof.DiscUpdate) {
@@ -69,12 +60,6 @@ namespace YARG.Serialization.Parser {
 					var tmap = midi.GetTempoMap();
 					MidiFile midi_update = MidiFile.Read(oof.UpdateMidiPath, new ReadingSettings() { TextEncoding = Encoding.GetEncoding("iso-8859-1") });
 
-					midi_update.QuantizeObjects(ObjectType.Note, snapGrid, //snap update midi notes to 16 ticks
-						new QuantizingSettings {
-							Filter = null,
-							QuantizingLevel = 1.0,
-						}
-					);
 					bool BaseTMapParsed = false;
 					// get base track chunks
 					foreach (var trackChunk in midi.GetTrackChunks()) {
@@ -106,13 +91,6 @@ namespace YARG.Serialization.Parser {
 					using var stream = new MemoryStream(oof.SongUpgrade.GetUpgradeMidi());
 					MidiFile upgrade = MidiFile.Read(stream, new ReadingSettings() { TextEncoding = Encoding.GetEncoding("iso-8859-1") });
 
-					upgrade.QuantizeObjects(ObjectType.Note, snapGrid, //snap upgrade midi notes to 16 ticks
-						new QuantizingSettings {
-							Filter = null,
-							QuantizingLevel = 1.0,
-						}
-					);
-
 					foreach (var trackChunk in upgrade.GetTrackChunks()) {
 						foreach (var trackEvent in trackChunk.Events) {
 							if (trackEvent is not SequenceTrackNameEvent trackName) continue;
@@ -131,6 +109,20 @@ namespace YARG.Serialization.Parser {
 						midi.Chunks.Add(track);
 					}
 				}
+
+				Debug.Log("Quantizing merged MIDI...");
+
+				var snapGrid = new SteppedGrid(TimeSpanUtilities.Parse("16")); // snap notes to 16 ticks
+
+				midi.QuantizeObjects(ObjectType.Note, snapGrid,
+					new QuantizingSettings {
+						Filter = null,
+						QuantizingLevel = 1.0,
+					}
+				);
+
+				Debug.Log("Merged MIDI quantized.");
+
 
 			}
 
